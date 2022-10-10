@@ -29,7 +29,7 @@ parser.add_argument('--sigma', type=float, default=0.0, help='covaraince.')
 parser.add_argument('--rho',   type=float, default=0.0, help='constraint.')
 parser.add_argument('--beta',  type=float, default=0.0, help='trade-off.')
 parser.add_argument('--T_in',  type=float, default=0.0, help='Scale for energy ID.')
-parser.add_argument('--T_out',  type=float, default=0.0, help='Scale for energy OOD.')
+parser.add_argument('--T_out', type=float, default=0.0, help='Scale for energy OOD.')
 
 parser.add_argument('--T', default=1., type=float, help='temperature: energy')
 
@@ -60,7 +60,7 @@ if args.alpha == 0 and args.sigma == 0 and args.rho == 0 and args.beta == 0:
         args.beta  = 2.5
     if args.dataset == 'cifar10'  and args.score == 'energy':
         args.sigma = 1.5
-        args.rho   = 0.05
+        args.rho   = .05
         args.beta  = 0.1
         args.T_in  = 0.2
         args.T_out = 0.7
@@ -113,16 +113,17 @@ to_np = lambda x: x.data.cpu().numpy()
 
 def get_ood_scores(loader, watermark = None, in_dist=False):
     _score = []
+    
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(loader):
             if batch_idx >= ood_num_examples // args.test_bs and in_dist is False:
                 break
-
+                
             data, target = data.cuda(), target.cuda()
-       
             if watermark is not None: 
                 data = data + watermark.cuda()
             output = net(data)
+            
             smax = to_np(F.softmax(output, dim=1))
             if args.score == 'energy':
                 _score.append(-to_np((args.T*torch.logsumexp(output / args.T, dim=1))))
@@ -136,7 +137,9 @@ def get_ood_scores(loader, watermark = None, in_dist=False):
 
 def get_and_print_results(ood_loader, in_score, watermark = None, num_to_avg=args.num_to_avg):
     aurocs, auprs, fprs = [], [], []
+    
     for _ in range(num_to_avg):
+        
         out_score = get_ood_scores(ood_loader, watermark)
         if args.out_as_pos:
             measures = get_measures(out_score, in_score)
@@ -149,6 +152,7 @@ def get_and_print_results(ood_loader, in_score, watermark = None, num_to_avg=arg
     return auroc, aupr, fpr
 
 def cal_loss(x, in_set):
+    
     loss = F.cross_entropy(x[:len(in_set[0])], in_set[1])
 
     if args.score == 'energy':
@@ -163,8 +167,11 @@ def cal_loss(x, in_set):
     return loss
 
 def train(epoch, watermark, alpha):
+    
     loss_avg = 0.0
+    
     for batch_idx, in_set in enumerate(train_loader):
+        
         in_set[0], in_set[1] = in_set[0].cuda(), in_set[1].cuda()
         out_set = torch.ones_like(in_set[0]) * 0 + torch.randn_like(in_set[0]) * args.sigma
         data = torch.cat((in_set[0], out_set), 0)
@@ -188,11 +195,14 @@ def train(epoch, watermark, alpha):
         # LOGS
         loss_avg = loss_avg * 0.8 + float(loss) * 0.2
         sys.stdout.write('\r E%d [%d / %d] loss %.2f ' %(epoch, batch_idx + 1, len(train_loader), loss_avg))
+        
     return watermark
+
 
 net = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate).cuda()
 optim = torch.optim.SGD(net.parameters(), lr = 1)
 watermark = torch.zeros(1,3,32,32).cuda()
+
 # Restore model
 if args.dataset == 'cifar10':
     model_path = args.load  + '/cifar10_wrn_pretrained_epoch_99.pt'
