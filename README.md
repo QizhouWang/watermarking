@@ -6,6 +6,8 @@ This repository is the official implementation of the NeurIPS'22 paper [Watermar
 
 **Abstract**: Out-of-distribution (OOD) detection aims to identify OOD data based on representations extracted from well-trained deep models. However, existing methods largely ignore the reprogramming property of deep models and thus may not fully unleash their intrinsic strength: without modifying parameters of a well-trained deep model, we can reprogram this model for a new purpose via data-level manipulation (e.g., adding a specific feature perturbation to the data). This property motivates us to reprogram a classification model to excel at OOD detection (a new task), and thus we propose a general methodology named watermarking in this paper. Specifically, we learn a unified pattern that is superimposed onto features of original data, and the model's detection capability is largely boosted after watermarking. Extensive experiments verify the effectiveness of watermarking, demonstrating the significance of the reprogramming property of deep models in OOD detection.
 
+
+```
 @inproceedings{
 wang2022watermarking,
 title={Watermarking for Out-of-distribution Detection},
@@ -15,6 +17,8 @@ editor={Alice H. Oh and Alekh Agarwal and Danielle Belgrave and Kyunghyun Cho},
 year={2022},
 url={https://openreview.net/forum?id=6rhl2k1SUGs}
 }
+
+```
 
 
 ## Get Started
